@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Gestión de Tareas</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Gestión de Tareas</h1>
+        
+        <!-- Filtros -->
+        <div class="filters">
+            <select id="status-filter">
+                <option value="">Todos los estados</option>
+                <option value="pendiente">Pendiente</option>
+                <option value="en_progreso">En Progreso</option>
+                <option value="completada">Completada</option>
+            </select>
+            
+            <select id="priority-filter">
+                <option value="">Todas las prioridades</option>
+                <option value="baja">Baja</option>
+                <option value="media">Media</option>
+                <option value="alta">Alta</option>
+            </select>
+            
+            <button id="filter-btn">Filtrar</button>
+            <button id="new-task-btn" class="primary">Nueva Tarea</button>
+        </div>
+
+        <!-- Lista de Tareas -->
+        <div id="tasks-container"></div>
+
+        <!-- Modal de Confirmación para Eliminar -->
+        <div id="confirm-modal" class="modal">
+            <div class="modal-content confirm-content">
+                <h2>Confirmar Eliminación</h2>
+                <p id="confirm-message">¿Desea eliminar esta tarea?</p>
+                <div class="confirm-buttons">
+                    <button id="confirm-yes" class="btn-danger">Aceptar</button>
+                    <button id="confirm-no" class="btn-secondary">Cancelar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal para Crear/Editar Tarea -->
+        <div id="task-modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2 id="modal-title">Nueva Tarea</h2>
+                <form id="task-form">
+                    <input type="hidden" id="task-id">
+                    <div class="form-group">
+                        <label for="titulo">Título:</label>
+                        <input type="text" id="titulo" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="descripcion">Descripción:</label>
+                        <textarea id="descripcion" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="estado">Estado:</label>
+                        <select id="estado" required>
+                            <option value="pendiente">Pendiente</option>
+                            <option value="en_progreso">En Progreso</option>
+                            <option value="completada">Completada</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="prioridad">Prioridad:</label>
+                        <select id="prioridad" required>
+                            <option value="baja">Baja</option>
+                            <option value="media">Media</option>
+                            <option value="alta">Alta</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="fecha_vencimiento">Fecha de Vencimiento:</label>
+                        <input type="datetime-local" id="fecha_vencimiento">
+                    </div>
+                    <button type="submit" class="primary">Guardar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', path='/js/main.js') }}"></script>
+    <script src="{{ url_for('static', path='/js/confirm-delete.js') }}"></script>
+</body>
+</html>
