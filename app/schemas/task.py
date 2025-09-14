@@ -3,10 +3,10 @@ from typing import Optional
 from datetime import datetime
 
 class TaskBase(BaseModel):
-    titulo: str = Field(..., min_length=1, max_length=100)
-    descripcion: str = Field(..., min_length=1)
-    estado: str = Field(..., pattern="^(pendiente|en_progreso|completada)$")
-    prioridad: str = Field(..., pattern="^(baja|media|alta)$")
+    titulo: str
+    descripcion: str
+    estado: str
+    prioridad: str
     fecha_vencimiento: Optional[datetime] = None
 
 class TaskCreate(TaskBase):
@@ -23,4 +23,4 @@ class Task(TaskBase):
     fecha_creacion: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True

@@ -1,5 +1,44 @@
-// URLs de la API
+// Configuración global
 const API_URL = '/api/tasks';
+let itemsPerPage = 5;
+let currentPage = 1;
+
+// Función global de paginación
+window.loadNextPage = function(page) {
+    currentPage = page;
+    loadTasks(page);
+};
+
+// Variables para almacenar funciones
+let loadTasksInternalFunction;
+let showNewTaskModalFunction;
+let hideModalFunction;
+
+// Función global para cargar tareas
+window.loadTasks = function(page = 1) {
+    if (loadTasksInternalFunction) {
+        return loadTasksInternalFunction(page);
+    } else {
+        console.log('Esperando a que se inicialice loadTasksInternal...');
+    }
+};
+
+// Funciones globales de UI
+window.showNewTaskModal = function() {
+    if (showNewTaskModalFunction) {
+        showNewTaskModalFunction();
+    } else {
+        console.log('Esperando a que se inicialice showNewTaskModal...');
+    }
+};
+
+window.hideModal = function() {
+    if (hideModalFunction) {
+        hideModalFunction();
+    } else {
+        console.log('Esperando a que se inicialice hideModal...');
+    }
+};
 
 document.addEventListener('DOMContentLoaded', function() {
     // Elementos del DOM
@@ -12,16 +51,28 @@ document.addEventListener('DOMContentLoaded', function() {
     const filterBtn = document.getElementById('filter-btn');
     const statusFilter = document.getElementById('status-filter');
     const priorityFilter = document.getElementById('priority-filter');
+    const itemsPerPageSelect = document.getElementById('items-per-page');
     const confirmYesBtn = document.getElementById('confirm-yes');
     const confirmNoBtn = document.getElementById('confirm-no');
     
     let taskToDelete = null;
+    
+    // Establecer el valor inicial del selector de elementos por página
+    if (itemsPerPageSelect) itemsPerPageSelect.value = itemsPerPage.toString();
+    
+    // Iniciar con la primera página
+    loadTasks(1);
 
     // Event Listeners
     if (newTaskBtn) newTaskBtn.addEventListener('click', showNewTaskModal);
     if (closeModal) closeModal.addEventListener('click', hideModal);
     if (taskForm) taskForm.addEventListener('submit', handleTaskSubmit);
-    if (filterBtn) filterBtn.addEventListener('click', loadTasks);
+    if (filterBtn) filterBtn.addEventListener('click', () => loadTasksInternalFunction(currentPage));
+    if (itemsPerPageSelect) itemsPerPageSelect.addEventListener('change', function() {
+        itemsPerPage = parseInt(this.value);
+        currentPage = 1; // Reiniciar a la primera página cuando cambia el número de elementos
+        loadTasksInternalFunction(currentPage);
+    });
     
     // Event Listeners para el modal de confirmación
     if (confirmYesBtn) {
@@ -52,37 +103,92 @@ document.addEventListener('DOMContentLoaded', function() {
     // Cargar tareas inicialmente
     loadTasks();
 
+    // Hacer las funciones necesarias accesibles globalmente
+    window.loadNextPage = function(page) {
+        currentPage = page;
+        loadTasks(page);
+    };
+
+    window.showEditTaskModal = async function(taskId) {
+        try {
+            const response = await fetch(`${API_URL}/${taskId}`);
+            if (!response.ok) throw new Error('Error al obtener la tarea');
+            const task = await response.json();
+
+            document.getElementById('task-id').value = task.id;
+            document.getElementById('titulo').value = task.titulo;
+            document.getElementById('descripcion').value = task.descripcion;
+            document.getElementById('estado').value = task.estado;
+            document.getElementById('prioridad').value = task.prioridad;
+            
+            if (task.fecha_vencimiento) {
+                const fecha = new Date(task.fecha_vencimiento);
+                const formatoFecha = fecha.toISOString().slice(0, 16);
+                document.getElementById('fecha_vencimiento').value = formatoFecha;
+            } else {
+                document.getElementById('fecha_vencimiento').value = '';
+            }
+
+            document.getElementById('modal-title').textContent = 'Editar Tarea';
+            taskModal.style.display = 'block';
+        } catch (error) {
+            console.error('Error:', error);
+            showError('Error al cargar la tarea');
+        }
+    };
+
+    window.showDeleteConfirmation = function(taskId) {
+        taskToDelete = taskId;
+        document.getElementById('confirm-message').textContent = '¿Está seguro de que desea eliminar esta tarea?';
+        confirmModal.style.display = 'block';
+    };
+
     // Funciones principales
-    async function loadTasks() {
+    loadTasksInternalFunction = async function(page = 1) {
         try {
             const estado = statusFilter.value;
             const prioridad = priorityFilter.value;
-            let url = API_URL;
             
-            // Agregar parámetros de filtro si existen
+            // Agregar parámetros de filtro y paginación
             const params = new URLSearchParams();
             if (estado) params.append('estado', estado);
             if (prioridad) params.append('prioridad', prioridad);
-            if (params.toString()) url += '?' + params.toString();
+            params.append('page', page);
+            params.append('per_page', itemsPerPage);
+            
+            const url = `${API_URL}?${params.toString()}`;
+            console.log('Requesting URL:', url); // Debug
             
             const response = await fetch(url);
-            if (!response.ok) throw new Error('Error al cargar las tareas');
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || 'Error al cargar las tareas');
+            }
             
-            const tasks = await response.json();
-            renderTasks(tasks);
+            const data = await response.json();
+            console.log('Response data:', data); // Debug
+            
+            if (!data || !data.items || !data.pagination) {
+                throw new Error('Formato de respuesta inválido');
+            }
+            
+            currentPage = page;
+            renderTasks(data);
         } catch (error) {
-            console.error('Error:', error);
-            showError('Error al cargar las tareas');
+            console.error('Error detallado:', error);
+            showError(error.message || 'Error al cargar las tareas');
         }
     }
 
-    function renderTasks(tasks) {
+    function renderTasks(data) {
+        const { items: tasks, pagination } = data;
+        
         if (!Array.isArray(tasks) || tasks.length === 0) {
             taskContainer.innerHTML = '<p class="no-tasks">No hay tareas que mostrar</p>';
             return;
         }
 
-        taskContainer.innerHTML = tasks.map(task => `
+        let tasksHtml = tasks.map(task => `
             <div class="task-card">
                 <div class="task-header">
                     <h3 class="task-title">${task.titulo}</h3>
@@ -101,6 +207,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             </div>
         `).join('');
+
+        taskContainer.innerHTML = `
+            <div class="tasks-grid">
+                ${tasksHtml}
+            </div>
+            <div class="pagination">
+                ${pagination.current_page > 1 ? 
+                    `<button onclick="window.loadNextPage(${pagination.current_page - 1})" class="pagination-btn">&laquo; Anterior</button>` 
+                    : ''}
+                <span class="pagination-info">Página ${pagination.current_page} de ${pagination.total_pages}</span>
+                ${pagination.has_next ? 
+                    `<button onclick="window.loadNextPage(${pagination.current_page + 1})" class="pagination-btn">Siguiente &raquo;</button>` 
+                    : ''}
+            </div>
+        `;
     }
 
     async function handleTaskSubmit(e) {
@@ -171,7 +292,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Funciones de UI
-    function showNewTaskModal() {
+    showNewTaskModalFunction = function() {
         taskForm.reset();
         document.getElementById('task-id').value = '';
         document.getElementById('modal-title').textContent = 'Nueva Tarea';
@@ -225,7 +346,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function hideModal() {
+    hideModalFunction = function() {
         taskModal.style.display = 'none';
         taskForm.reset();
     }

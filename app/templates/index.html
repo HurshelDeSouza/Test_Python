@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Gestión de Tareas</title>
     <link rel="stylesheet" href="{{ url_for('static', path='/css/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/pagination.css') }}">
 </head>
 <body>
     <div class="container">
@@ -24,6 +25,13 @@
                 <option value="baja">Baja</option>
                 <option value="media">Media</option>
                 <option value="alta">Alta</option>
+            </select>
+            
+            <select id="items-per-page">
+                <option value="5">5 por página</option>
+                <option value="10">10 por página</option>
+                <option value="15">15 por página</option>
+                <option value="20">20 por página</option>
             </select>
             
             <button id="filter-btn">Filtrar</button>

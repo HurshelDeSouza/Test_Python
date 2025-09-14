@@ -1,0 +1,35 @@
+/* Paginación */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 2rem;
+    padding: 1rem;
+}
+
+.pagination-btn {
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--primary-color);
+    background-color: white;
+    color: var(--primary-color);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.pagination-btn:hover {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.pagination-info {
+    color: var(--text-color);
+    font-size: 0.9rem;
+}
+
+/* Grid de tareas */
+.tasks-grid {
+    display: grid;
+    gap: 1rem;
+}

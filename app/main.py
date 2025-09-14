@@ -26,18 +26,69 @@ async def home(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
 # API endpoints
-@app.get("/api/tasks", response_model=List[Task])
+@app.get("/api/tasks")
 async def get_tasks(
     estado: Optional[str] = Query(None, enum=["pendiente", "en_progreso", "completada"]),
     prioridad: Optional[str] = Query(None, enum=["baja", "media", "alta"]),
+    page: int = Query(1, ge=1),
+    per_page: int = Query(5, ge=1, le=100),
     db: Session = Depends(get_db)
 ):
-    query = db.query(TaskModel)
-    if estado:
-        query = query.filter(TaskModel.estado == estado)
-    if prioridad:
-        query = query.filter(TaskModel.prioridad == prioridad)
-    return query.all()
+    try:
+        # Consulta base
+        query = db.query(TaskModel)
+        
+        # Aplicar filtros
+        if estado:
+            query = query.filter(TaskModel.estado == estado)
+        if prioridad:
+            query = query.filter(TaskModel.prioridad == prioridad)
+        
+        # Calcular paginación
+        total_items = query.count()
+        total_pages = max((total_items + per_page - 1) // per_page, 1)
+        
+        # Asegurar que page está en rango válido
+        page = min(max(1, page), total_pages)
+        
+        # Obtener tareas para la página actual
+        tasks = query.order_by(TaskModel.fecha_creacion.desc())\
+                    .offset((page - 1) * per_page)\
+                    .limit(per_page)\
+                    .all()
+        
+        # Convertir modelos a diccionarios
+        tasks_list = []
+        for task in tasks:
+            tasks_list.append({
+                "id": task.id,
+                "titulo": task.titulo,
+                "descripcion": task.descripcion,
+                "estado": task.estado,
+                "prioridad": task.prioridad,
+                "fecha_creacion": task.fecha_creacion.isoformat() if task.fecha_creacion else None,
+                "fecha_vencimiento": task.fecha_vencimiento.isoformat() if task.fecha_vencimiento else None
+            })
+        
+        # Retornar respuesta estructurada
+        return {
+            "items": tasks_list,
+            "pagination": {
+                "total_items": total_items,
+                "total_pages": total_pages,
+                "current_page": page,
+                "per_page": per_page,
+                "has_next": page < total_pages,
+                "has_prev": page > 1
+            }
+        }
+        
+    except Exception as e:
+        print(f"Error en get_tasks: {str(e)}")  # Debug
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error al cargar las tareas: {str(e)}"
+        )
 
 @app.get("/api/tasks/{task_id}", response_model=Task)
 async def get_task(task_id: int, db: Session = Depends(get_db)):
