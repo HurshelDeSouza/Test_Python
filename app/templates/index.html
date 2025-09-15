@@ -13,28 +13,34 @@
         
         <!-- Filtros -->
         <div class="filters">
+            <div class="search-group">
+                <input type="text" id="search-input" placeholder="Buscar tareas...">
+                <button id="search-btn">Buscar</button>
+            </div>
+
             <select id="status-filter">
                 <option value="">Todos los estados</option>
                 <option value="pendiente">Pendiente</option>
                 <option value="en_progreso">En Progreso</option>
                 <option value="completada">Completada</option>
             </select>
-            
+
             <select id="priority-filter">
                 <option value="">Todas las prioridades</option>
                 <option value="baja">Baja</option>
                 <option value="media">Media</option>
                 <option value="alta">Alta</option>
             </select>
-            
+
             <select id="items-per-page">
                 <option value="5">5 por página</option>
                 <option value="10">10 por página</option>
                 <option value="15">15 por página</option>
                 <option value="20">20 por página</option>
             </select>
-            
+
             <button id="filter-btn">Filtrar</button>
+            <button id="clear-filters-btn" class="btn-secondary">Limpiar</button>
             <button id="new-task-btn" class="primary">Nueva Tarea</button>
         </div>
 

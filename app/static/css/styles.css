@@ -36,6 +36,22 @@ h1 {
     display: flex;
     gap: 10px;
     margin-bottom: 20px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.search-group {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+
+#search-input {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    min-width: 200px;
 }
 
 select, button {
@@ -105,6 +121,19 @@ button.primary {
 .task-actions {
     display: flex;
     gap: 5px;
+}
+
+.edit-btn {
+    background-color: #1E90FF; /* Azul (DodgerBlue) */
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.edit-btn:hover {
+    background-color: #0078D7; /* Un azul más oscuro al pasar el mouse */
 }
 
 /* Modal */

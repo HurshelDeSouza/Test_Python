@@ -49,6 +49,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const closeModal = document.querySelector('.close');
     const newTaskBtn = document.getElementById('new-task-btn');
     const filterBtn = document.getElementById('filter-btn');
+    const searchBtn = document.getElementById('search-btn');
+    const clearFiltersBtn = document.getElementById('clear-filters-btn');
+    const searchInput = document.getElementById('search-input');
     const statusFilter = document.getElementById('status-filter');
     const priorityFilter = document.getElementById('priority-filter');
     const itemsPerPageSelect = document.getElementById('items-per-page');
@@ -68,6 +71,17 @@ document.addEventListener('DOMContentLoaded', function() {
     if (closeModal) closeModal.addEventListener('click', hideModal);
     if (taskForm) taskForm.addEventListener('submit', handleTaskSubmit);
     if (filterBtn) filterBtn.addEventListener('click', () => loadTasksInternalFunction(currentPage));
+    if (searchBtn) searchBtn.addEventListener('click', () => {
+        currentPage = 1; // Reiniciar a la primera página al buscar
+        loadTasksInternalFunction(currentPage);
+    });
+    if (clearFiltersBtn) clearFiltersBtn.addEventListener('click', clearFilters);
+    if (searchInput) searchInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            currentPage = 1; // Reiniciar a la primera página al buscar
+            loadTasksInternalFunction(currentPage);
+        }
+    });
     if (itemsPerPageSelect) itemsPerPageSelect.addEventListener('change', function() {
         itemsPerPage = parseInt(this.value);
         currentPage = 1; // Reiniciar a la primera página cuando cambia el número de elementos
@@ -148,11 +162,13 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             const estado = statusFilter.value;
             const prioridad = priorityFilter.value;
-            
-            // Agregar parámetros de filtro y paginación
+            const search = searchInput.value.trim();
+
+            // Agregar parámetros de filtro, búsqueda y paginación
             const params = new URLSearchParams();
             if (estado) params.append('estado', estado);
             if (prioridad) params.append('prioridad', prioridad);
+            if (search) params.append('search', search);
             params.append('page', page);
             params.append('per_page', itemsPerPage);
             
@@ -226,23 +242,67 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function handleTaskSubmit(e) {
         e.preventDefault();
-        
+
+        // Validación del lado del cliente
+        const titulo = document.getElementById('titulo').value.trim();
+        const descripcion = document.getElementById('descripcion').value.trim();
+        const estado = document.getElementById('estado').value;
+        const prioridad = document.getElementById('prioridad').value;
+        const fechaVencimiento = document.getElementById('fecha_vencimiento').value;
+
+        // Validar campos requeridos
+        if (!titulo) {
+            showError('El título es obligatorio');
+            document.getElementById('titulo').focus();
+            return;
+        }
+
+        if (!descripcion) {
+            showError('La descripción es obligatoria');
+            document.getElementById('descripcion').focus();
+            return;
+        }
+
+        if (!estado) {
+            showError('Debe seleccionar un estado');
+            document.getElementById('estado').focus();
+            return;
+        }
+
+        if (!prioridad) {
+            showError('Debe seleccionar una prioridad');
+            document.getElementById('prioridad').focus();
+            return;
+        }
+
+        // Validar fecha de vencimiento si está presente
+        if (fechaVencimiento) {
+            const fechaSeleccionada = new Date(fechaVencimiento);
+            const ahora = new Date();
+
+            if (fechaSeleccionada < ahora) {
+                showError('La fecha de vencimiento no puede ser anterior a la fecha actual');
+                document.getElementById('fecha_vencimiento').focus();
+                return;
+            }
+        }
+
         const taskId = document.getElementById('task-id').value;
         const taskData = {
-            titulo: document.getElementById('titulo').value,
-            descripcion: document.getElementById('descripcion').value,
-            estado: document.getElementById('estado').value,
-            prioridad: document.getElementById('prioridad').value,
-            fecha_vencimiento: document.getElementById('fecha_vencimiento').value || null
+            titulo: titulo,
+            descripcion: descripcion,
+            estado: estado,
+            prioridad: prioridad,
+            fecha_vencimiento: fechaVencimiento || null
         };
-        
+
         try {
             if (taskId) {
                 await updateTask(taskId, taskData);
             } else {
                 await createTask(taskData);
             }
-            
+
             hideModal();
             loadTasks();
         } catch (error) {
@@ -382,6 +442,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function showError(message) {
         alert(message);
+    }
+
+    // Función para limpiar filtros
+    function clearFilters() {
+        if (searchInput) searchInput.value = '';
+        if (statusFilter) statusFilter.value = '';
+        if (priorityFilter) priorityFilter.value = '';
+        if (itemsPerPageSelect) itemsPerPageSelect.value = '5';
+        itemsPerPage = 5;
+        currentPage = 1;
+        loadTasksInternalFunction(currentPage);
     }
 
     // Hacer global showDeleteConfirmation para poder llamarla desde el HTML
